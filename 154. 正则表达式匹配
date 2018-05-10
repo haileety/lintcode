@@ -1,0 +1,100 @@
+package com.java.Algorithm.lintcode;
+
+//LintCode 154. 正则表达式匹配
+/*
+ * .点  匹配任何单个字符
+  *:前面字符或组匹配0或多个
+Implement regular expression matching with support for '.' and '*'.
+'.' Matches any single character.
+'*' Matches zero or more of the preceding element.
+The matching should cover the entire input string (not partial).
+The function prototype should be:
+bool isMatch(const char *s, const char *p)
+Some examples:
+isMatch("aa","a") → false
+isMatch("aa","aa") → true
+isMatch("aaa","aa") → false
+isMatch("aa", "a*") → true
+isMatch("aa", ".*") → true
+isMatch("ab", ".*") → true
+isMatch("aab", "c*a*b") → true
+*/
+
+/*
+Thoughts:
+Two sequence, DP, find if possible to match.
+The '*' takes effect of preceding element, so we can start matching from end.
+DP[i][j]: is it possible to match s[0 ~ i - 1] and p[0 ~ j - 1].
+Check last index of s and p, there can be a few possibilities:
+1. s[i-1]==p[j-1] and they are normal characters => && dp[i - 1][j - 1];
+2. p[j-1] == '.', match => dp[i - 1][j - 1]
+3. p[j-1] == '*':
+    a. ignore a* => |= dp[i][j - 2];
+    b. use a*    => |= dp[i - 1][j]; 
+init:
+dp[0][j] and dp[i][0] will all be false since there can't be any match.
+*/
+class Solution {
+	public static void main(String[] args) {
+		Solution s= new Solution();
+		System.out.println(s.isMatch("aab", "a*a*b"));
+		System.out.println(s.isMatch("aa", "a*"));
+		System.out.println(s.isMatch("aa","a"));
+		System.out.println(s.isMatch("ab", ".*"));
+		System.out.println(s.isMatch("aab", "c*a*b"));
+		
+	}
+    public boolean isMatch(String s, String p) {
+        if (s == null || p == null) {
+            return false;
+        }
+        //长度不相等，而且没有*也没有.
+        if (s.length() != p.length() && p.indexOf('.') < 0 && p.indexOf('*') < 0) {
+            return false;
+        }
+        int m = s.length();
+        int n = p.length();
+        boolean[][] dp = new boolean[m + 1][n + 1];
+        char[] ss = s.toCharArray();
+        char[] pp = p.toCharArray();
+    	/*
+    	 *  思路：
+    	 *  状态定义：dp[i][j]表示s[0~i-1]是否匹配p[0~j-1]
+    	 *  递推关系式：
+    	 *  1.dp[i][j] = dp[i-1][j-1].   如果p[j-1]=='.' 或 s[i-1] == p[j-1]
+    	 *  2.dp[i][j] = dp[i-1][j] || dp[i][j-1].  dp[i-1][j]表示保留p中的*，可以匹配s中跟多字符,dp[i][j-1]表示p中的*匹配空字符
+    	 *  初始状态：s="", p=""应该返回true
+    	 */
+        for (int i = 0; i <= m; i++) {
+            for (int j = 0; j <= n; j++) {
+                if (i == 0 && j == 0) {
+                	//初始状态：s="", p=""应该返回true
+                    dp[i][j] = true;
+                    continue;
+                }
+                if (i >= 1 && j == 0) {
+                    dp[i][j] = false;
+                    continue;
+                }
+                // j >= 1
+                dp[i][j] = false;
+                //如果p当前位前一位不是*
+                if (pp[j - 1] != '*') {
+                	//那么s的前一位是和p的前一位相等，或者p的前一位是.
+                    if (i >= 1 && (ss[i - 1] == pp[j - 1] || pp[j - 1] == '.')) {
+                        dp[i][j] = dp[i - 1][j - 1];
+                    }
+                } else { // tail = '*'. ex: a*    //p当前位的前一位是*  
+                    if (j >= 2 ) { // ignore a*   比如  "cb", "ca*b"
+                        dp[i][j] = dp[i][j - 2];
+                    }
+                    //use a*     比如  "cab", "c.*b"或者"ca*b"
+                    if (j >= 2 && i >= 1 && (pp[j - 2] == '.' || pp[j - 2] == ss[i - 1])) {
+                        dp[i][j] |= dp[i - 1][j];//dp[i][j] = dp[i][j] | dp[i - 1][j];
+                    }
+                }
+            }
+        }
+        return dp[m][n];
+    }
+}
