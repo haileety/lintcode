@@ -1,1 +1,143 @@
 Remove Node in Binary Search Tree.java
+
+
+
+package com.hailee.deleteBstNode;
+/*
+Example
+Given binary search tree:
+           5
+        /    \
+       3      6
+     /    \
+   2       4
+
+Remove 3, you can either return:
+          5
+       /    \
+    2          6
+      \
+         4
+or :
+          5
+       /    \
+    4          6
+ /
+2
+*/
+
+import java.util.ArrayList;
+import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
+
+public class Solution {
+    public static void main(String[] args) {
+        TreeNode root= new TreeNode(5);
+        TreeNode r1= new TreeNode(3);
+        TreeNode r2= new TreeNode(6);
+        TreeNode r3= new TreeNode(2);
+        TreeNode r4= new TreeNode(4);
+        root.left=r1;
+        root.right=r2;
+        r1.left=r3;
+        r1.right=r4;
+        Solution solution = new Solution();
+        TreeNode node=solution.removeNode(root,3);
+        solution.printFromTopToBottom(node);
+
+    }
+    public TreeNode removeNode(TreeNode root, int value) {
+        if (root == null || (root.left == null && root.right == null)) {
+            return null;
+        }
+        TreeNode dummy = new TreeNode(0);;
+        dummy.left = root;
+        //Find node
+        TreeNode parent = findTargetParent(dummy, root, value);
+        TreeNode child;
+        if (parent.left != null && parent.left.val == value) {
+            child = parent.left;
+        } else if (parent.right != null && parent.right.val == value) {
+            child = parent.right;
+        } else {
+            return dummy.left;
+        }
+        //Delete that node:
+        deleteTargetNode(parent, child);
+        return dummy.left;
+    }
+
+
+    //Find target node
+    public TreeNode findTargetParent(TreeNode parent, TreeNode node, int value){
+        if (node == null || node.val == value) {
+            return parent;
+        }
+        
+        if (value < node.val) {
+            return findTargetParent(node, node.left, value);
+        } else {
+            return findTargetParent(node, node.right, value);
+        }
+    }
+    //Delete node
+    public void deleteTargetNode(TreeNode parent, TreeNode target) {
+        //Case1 + case2: (target.L == null && target.R == null) || (target.R == null && target.L != null)
+        if (target.right == null) {
+            if (parent.left == target) {
+                parent.left = target.left;
+            } else {
+                parent.right = target.left;
+            }
+        } else {//Case3: when target.right != null
+            TreeNode replaceNode = target.right;
+            TreeNode replaceParent = target;
+            while(replaceNode.left != null) {
+                replaceParent = replaceNode;
+                replaceNode = replaceNode.left;
+            }
+            //Remove replaceNode from replaceParent
+            if (replaceParent.left == replaceNode) {//Usually it'll be replaceParent.left
+                replaceParent.left = replaceNode.right;
+            } else {//Sometimes when target.left == null, than means replaceParent.right will be replaceNode (while loop didn't start at all)
+                replaceParent.right = replaceNode.right;
+            }
+            
+            //Remove target from parent: not sure it's left or right node of parent
+            if (parent.left == target) {
+                parent.left = replaceNode;
+            } else {
+                parent.right = replaceNode;
+            }
+            
+            replaceNode.left = target.left;
+            replaceNode.right = target.right;
+        }
+    }
+    public ArrayList<Integer> printFromTopToBottom(TreeNode root) {
+        ArrayList<Integer> list=new ArrayList<Integer>();
+        Queue<TreeNode> queue=new ArrayBlockingQueue<>(100);
+        TreeNode last=root;     //当前行的最后节点
+        TreeNode nLast=root;    //下一行的最右节点
+        queue.add(root);
+        while (!queue.isEmpty()) {
+            TreeNode out=queue.poll();
+            System.out.print(out.val+" ");
+            list.add(out.val);
+            if (out.left!=null) {
+                queue.add(out.left);
+                nLast=out.left;
+            }
+            if (out.right!=null) {
+                queue.add(out.right);
+                nLast=out.right;
+            }
+            if (out==last) {
+                System.out.println("");
+                last=nLast;
+            }
+
+        }
+        return list;
+    }
+}
